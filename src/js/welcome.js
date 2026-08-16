@@ -409,12 +409,17 @@ $('#sync_counts').on('click', async () => {
   });
   //Get stats
 
+  /* Recount the solved totals, but carry `shas` over untouched. This sync only walks
+     READMEs to tally difficulties — it never rediscovers blob SHAs — so blanking the
+     map here would make every already-pushed file look new, and the next submission to
+     any of them would be sent to GitHub without the SHA it requires for an update. */
+  const { stats: previousStats } = await chrome.storage.local.get('stats');
   const stats = {};
   stats.solved = 0;
   stats.easy = 0;
   stats.medium = 0;
   stats.hard = 0;
-  stats.shas = {};
+  stats.shas = previousStats?.shas ?? {};
 
   //Get problems solved count from linked repo
   const repo = await chrome.storage.local.get('leethub_hook').then(({ leethub_hook }) => {
