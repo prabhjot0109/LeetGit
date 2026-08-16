@@ -7,6 +7,9 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 
 export default [
+  {
+    ignores: ['node_modules/**', 'dist/**', 'build/**', 'src/js/static/**'],
+  },
   js.configs.recommended,
   prettierConfig,
   {
@@ -39,6 +42,6 @@ export default [
         version: 'detect',
       },
     },
-    ignores: ['node_modules/', 'dist/', 'build/'],
+    ignores: ['node_modules/', 'dist/', 'build/', 'src/js/static/'],
   },
 ];

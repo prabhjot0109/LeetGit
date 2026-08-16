@@ -33,7 +33,9 @@ const statusCode = (res, status, name) => {
 
     case 403:
       $('#success').hide();
-      $('#error').text(`Error creating ${name} - Forbidden access to repository. Try again later!`);
+      $('#error').text(
+        `Error creating ${name} - Your token is not allowed to create repositories. A fine-grained PAT needs "Administration: Read and write" and must be scoped to "All repositories"; a classic PAT needs the "repo" scope. Otherwise, create the repository on GitHub yourself and use "Link an Existing Repository".`,
+      );
       $('#error').show();
       break;
 
@@ -74,19 +76,25 @@ const createRepo = (token, name) => {
     private: true,
     auto_init: true,
     description:
-      'Collection of LeetCode questions to ace the coding interview! - Created using [LeetHub-3.0](https://github.com/raphaelheinz/LeetHub-3.0)',
+      'Collection of LeetCode questions to ace the coding interview! - Created using [LeetGit](https://github.com/prabhjot0109/LeetGit)',
   };
   data = JSON.stringify(data);
 
   const xhr = new XMLHttpRequest();
   xhr.addEventListener('readystatechange', function () {
     if (xhr.readyState === 4) {
-      statusCode(JSON.parse(xhr.responseText), xhr.status, name);
+      let res = {};
+      try {
+        res = JSON.parse(xhr.responseText);
+      } catch {
+        res = {};
+      }
+      statusCode(res, xhr.status, name);
     }
   });
 
   xhr.open('POST', AUTHENTICATION_URL, true);
-  xhr.setRequestHeader('Authorization', `token ${token}`);
+  xhr.setRequestHeader('Authorization', `Bearer ${token}`);
   xhr.setRequestHeader('Accept', 'application/vnd.github.v3+json');
   xhr.send(data);
 };
@@ -94,11 +102,25 @@ const createRepo = (token, name) => {
 /* Status codes for linking of repo */
 const linkStatusCode = (status, name) => {
   let bool = false;
+  const repoLink = `<a target="blank" href="https://github.com/${name}">${name}</a>`;
   switch (status) {
+    case 200:
+    case 201:
+      bool = true;
+      break;
+
     case 301:
       $('#success').hide();
       $('#error').html(
-        `Error linking <a target="blank" href="${`https://github.com/${name}`}">${name}</a> to LeetHub. <br> This repository has been moved permenantly. Try creating a new one.`,
+        `Error linking ${repoLink} to LeetGit. <br> This repository has been moved permenantly. Try creating a new one.`,
+      );
+      $('#error').show();
+      break;
+
+    case 401:
+      $('#success').hide();
+      $('#error').html(
+        `Error linking ${repoLink} to LeetGit. <br> Your Personal Access Token is invalid or has expired. Open the extension popup and enter a valid PAT.`,
       );
       $('#error').show();
       break;
@@ -106,7 +128,7 @@ const linkStatusCode = (status, name) => {
     case 403:
       $('#success').hide();
       $('#error').html(
-        `Error linking <a target="blank" href="${`https://github.com/${name}`}">${name}</a> to LeetHub. <br> Forbidden action. Please make sure you have the right access to this repository.`,
+        `Error linking ${repoLink} to LeetGit. <br> Forbidden action. Make sure your token grants "Contents: Read and write" on this repository (fine-grained PAT) or the "repo" scope (classic PAT).`,
       );
       $('#error').show();
       break;
@@ -114,13 +136,17 @@ const linkStatusCode = (status, name) => {
     case 404:
       $('#success').hide();
       $('#error').html(
-        `Error linking <a target="blank" href="${`https://github.com/${name}`}">${name}</a> to LeetHub. <br> Resource not found. Make sure you enter the right repository name.`,
+        `Error linking ${repoLink} to LeetGit. <br> Resource not found. Make sure you entered the right repository name, and that your token is scoped to include this repository.`,
       );
       $('#error').show();
       break;
 
     default:
-      bool = true;
+      $('#success').hide();
+      $('#error').html(
+        `Error linking ${repoLink} to LeetGit. <br> GitHub responded with HTTP ${status}. Please try again later.`,
+      );
+      $('#error').show();
       break;
   }
   $('#unlink').show();
@@ -159,7 +185,7 @@ function loadRepositories() {
           affiliation: 'owner',
         },
         headers: {
-          Authorization: `token ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         success: function (response, status, xhr) {
           repos = repos.concat(response);
@@ -203,16 +229,22 @@ const linkRepo = (token, name) => {
   const xhr = new XMLHttpRequest();
   xhr.addEventListener('readystatechange', function () {
     if (xhr.readyState === 4) {
-      const res = JSON.parse(xhr.responseText);
+      /* GitHub returns JSON for every documented status, but a proxy/offline
+         failure can yield an empty or HTML body — don't let that throw. */
+      let res = {};
+      try {
+        res = JSON.parse(xhr.responseText);
+      } catch {
+        res = {};
+      }
       const bool = linkStatusCode(xhr.status, name);
-      console.log('🚀 ~ file: welcome.js:153 ~ bool:', bool);
       if (xhr.status === 200) {
         // BUG FIX
         if (!bool) {
           // unable to gain access to repo in commit mode. Must switch to hook mode.
           /* Set mode type to hook */
           chrome.storage.local.set({ mode_type: 'hook' }, () => {
-            console.log(`Error linking ${name} to LeetHub`);
+            console.log(`Error linking ${name} to LeetGit`);
           });
           /* Set Repo Hook to NONE */
           chrome.storage.local.set({ leethub_hook: null }, () => {
@@ -228,7 +260,7 @@ const linkRepo = (token, name) => {
           chrome.storage.local.set({ mode_type: 'commit', repo: res.html_url }, () => {
             $('#error').hide();
             $('#success').html(
-              `Successfully linked <a target="blank" href="${res.html_url}">${name}</a> to LeetHub. Start <a href="http://leetcode.com">LeetCoding</a> now!`,
+              `Successfully linked <a target="blank" href="${res.html_url}">${name}</a> to LeetGit. Start <a href="https://leetcode.com">LeetCoding</a> now!`,
             );
             $('#success').show();
             $('#unlink').show();
@@ -260,7 +292,7 @@ const linkRepo = (token, name) => {
   });
 
   xhr.open('GET', AUTHENTICATION_URL, true);
-  xhr.setRequestHeader('Authorization', `token ${token}`);
+  xhr.setRequestHeader('Authorization', `Bearer ${token}`);
   xhr.setRequestHeader('Accept', 'application/vnd.github.v3+json');
   xhr.send();
 };
@@ -314,31 +346,43 @@ $('#hook_button').on('click', () => {
       - step 3: if (1), POST request to repoName (iff option = create new repo) ; else display error message.
       - step 4: if proceed from 3, hide hook_mode and display commit_mode (show stats e.g: files pushed/questions-solved/leaderboard)
     */
-    chrome.storage.local.get('leethub_token', data => {
+    chrome.storage.local.get(['leethub_token', 'leethub_username'], async data => {
       const token = data.leethub_token;
+      let username = data.leethub_username;
       if (token === null || token === undefined) {
         /* Not authorized yet. */
         $('#error').text(
-          'Authorization error - Grant LeetHub access to your GitHub account to continue (launch extension to proceed)',
+          'Personal Access Token error - Please enter your GitHub PAT in the extension popup to continue.',
         );
         $('#error').show();
         $('#success').hide();
       } else if (option() === 'new') {
         createRepo(token, repositoryName());
       } else {
-        chrome.storage.local.get('leethub_username', data2 => {
-          const username = data2.leethub_username;
-          if (!username) {
-            /* Improper authorization. */
-            $('#error').text(
-              'Improper Authorization error - Grant LeetHub access to your GitHub account to continue (launch extension to proceed)',
-            );
-            $('#error').show();
-            $('#success').hide();
-          } else {
-            linkRepo(token, `${username}/${repositoryName()}`, false);
+        if (!username) {
+          try {
+            const userRes = await fetch('https://api.github.com/user', {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                Accept: 'application/vnd.github.v3+json',
+              },
+            });
+            if (userRes.ok) {
+              const userData = await userRes.json();
+              username = userData.login;
+              chrome.storage.local.set({ leethub_username: username });
+            }
+          } catch (e) {
+            console.error('Error fetching user info:', e);
           }
-        });
+        }
+
+        const repoToLink = repositoryName().includes('/')
+          ? repositoryName()
+          : username
+            ? `${username}/${repositoryName()}`
+            : repositoryName();
+        linkRepo(token, repoToLink);
       }
     });
   }
@@ -387,7 +431,9 @@ $('#sync_counts').on('click', async () => {
   //Get token from storage
   const token = await chrome.storage.local.get('leethub_token').then(({ leethub_token }) => {
     if (leethub_token == null) {
-      $('#error').text('No token found - Please authorize LeetHub to access your GitHub account!');
+      $('#error').text(
+        'No token found - Please enter your GitHub Personal Access Token in the extension popup!',
+      );
       $('#error').show();
       return;
     } else {
@@ -404,7 +450,7 @@ $('#sync_counts').on('click', async () => {
     try {
       const response = await fetch(`https://api.github.com/repos/${repo}/contents`, {
         headers: {
-          Authorization: `token ${token}`,
+          Authorization: `Bearer ${token}`,
           Accept: 'application/vnd.github.v3+json',
         },
       });
@@ -476,7 +522,7 @@ const fetchFileContent = async (repo, path, token, itemType) => {
   try {
     const response = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
       headers: {
-        Authorization: `token ${token}`,
+        Authorization: `Bearer ${token}`,
         Accept: 'application/vnd.github.v3+json',
       },
     });
@@ -506,7 +552,7 @@ chrome.storage.local.get('mode_type', data => {
       if (token === null || token === undefined) {
         /* Not authorized yet. */
         $('#error').text(
-          'Authorization error - Grant LeetHub access to your GitHub account to continue (click LeetHub extension on the top right to proceed)',
+          'Personal Access Token error - Please enter your GitHub PAT in the extension popup to continue.',
         );
         $('#error').show();
         $('#success').hide();
@@ -520,7 +566,7 @@ chrome.storage.local.get('mode_type', data => {
           if (!hook) {
             /* Not authorized yet. */
             $('#error').text(
-              'Improper Authorization error - Grant LeetHub access to your GitHub account to continue (click LeetHub extension on the top right to proceed)',
+              'No repository hook found - Please link or create a repository below.',
             );
             $('#error').show();
             $('#success').hide();
@@ -528,7 +574,7 @@ chrome.storage.local.get('mode_type', data => {
             document.getElementById('hook_mode').style.display = 'inherit';
             document.getElementById('commit_mode').style.display = 'none';
           } else {
-            /* Username exists, at least in storage. Confirm this */
+            /* Hook exists, link and verify */
             linkRepo(token, hook);
           }
         });

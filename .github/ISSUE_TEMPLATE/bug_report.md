@@ -1,9 +1,9 @@
 ---
 name: Bug report
-about: Create a report to help us improve LeetHub
+about: Create a report to help us improve LeetGit
 title: ''
 labels: bug
-assignees: raphaelheinz
+assignees: prabhjot0109
 
 ---
 

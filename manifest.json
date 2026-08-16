@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "LeetHub-3.0",
+  "name": "LeetGit",
   "description": "Automatically integrate your Leetcode submissions to GitHub",
-  "homepage_url": "https://github.com/raphaelheinz/LeetHub-3.0",
+  "homepage_url": "https://github.com/prabhjot0109/LeetGit",
   "version": "0.0.16",
-  "author": "Raphael Heinz",
+  "author": "Prabhjot Singh",
   "action": {
     "default_icon": "assets/thumbnail.png",
     "default_popup": "src/html/popup.html"
@@ -25,8 +25,7 @@
     {
       "matches": [
         "https://leetcode.com/*",
-        "https://leetcode.cn/*",
-        "https://github.com/*"
+        "https://leetcode.cn/*"
       ],
       "js": [
         "src/js/interceptor.js"
@@ -37,12 +36,10 @@
     {
       "matches": [
         "https://leetcode.com/*",
-        "https://leetcode.cn/*",
-        "https://github.com/*"
+        "https://leetcode.cn/*"
       ],
       "js": [
-        "src/js/leetcode.js",
-        "src/js/authorize.js"
+        "src/js/leetcode.js"
       ],
       "run_at": "document_idle"
     }

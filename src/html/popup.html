@@ -4,30 +4,75 @@
     <meta charset="UTF-8" />
     <link rel="stylesheet" href="../css/popup.css" />
     <script src="../js/static/jquery-3.3.1.min.js"></script>
-    <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css"
-      rel="stylesheet"
-    />
+    <link href="../css/static/semantic-2.4.1.min.css" rel="stylesheet" />
     <script src="../js/static/semantic-2.4.1.min.js"></script>
   </head>
 
   <body>
     <div class="ui grid container">
       <div class="sixteen wide center aligned column">
-        <h1 id="title">Leet<span style="color: #ff6c0a">Hub</span>-3.0</h1>
+        <h1 id="title">Leet<span style="color: #ff6c0a">Git</span></h1>
         <p id="caption">Sync your code from LeetCode to GitHub</p>
         <br />
         <!-- Authentication mode -->
         <div id="auth_mode" hidden>
           <p class="onboarding">
-            <br />
-            Authenticate with GitHub to use
-            <strong>Leet<span style="color: #ff6c0a">Hub</span></strong>
+            Authenticate with GitHub <strong>Personal Access Token (PAT)</strong> to use
+            <strong>Leet<span style="color: #ff6c0a">Git</span></strong>
           </p>
-          <button id="authenticate" class="ui secondary button">
-            <i class="icon github"></i>
-            Authenticate
+          <div class="ui form" style="text-align: left; margin: 10px 0">
+            <div class="field">
+              <label for="pat_token" style="font-size: 0.9em; font-weight: bold"
+                >GitHub Personal Access Token:</label
+              >
+              <div class="ui input fluid">
+                <input
+                  type="password"
+                  id="pat_token"
+                  placeholder="ghp_... or github_pat_..."
+                  autocomplete="off"
+                />
+              </div>
+            </div>
+          </div>
+          <button id="authenticate" class="ui secondary button fluid">
+            <i class="icon key"></i>
+            Authenticate PAT
           </button>
+          <div
+            id="auth_error"
+            style="color: #d9534f; margin-top: 8px; font-size: 0.85em; display: none"
+          ></div>
+          <div style="margin-top: 12px; font-size: 0.8em; line-height: 1.4; text-align: left">
+            <p style="margin-bottom: 4px"><strong>Token Requirements:</strong></p>
+            <ul style="padding-left: 18px; margin: 0">
+              <li><strong>Classic PAT:</strong> Scope: <code>repo</code></li>
+              <li>
+                <strong>Fine-grained PAT:</strong> Repository permissions &rarr;
+                <strong>Contents: Read and write</strong>. To let LeetGit <em>create</em> a new
+                repository for you, also grant <strong>Administration: Read and write</strong> and
+                scope the token to <strong>All repositories</strong> &mdash; otherwise create the
+                repo yourself on GitHub and use "Link an Existing Repository".
+              </li>
+            </ul>
+            <p style="margin-top: 8px; text-align: center">
+              <a
+                href="https://github.com/settings/tokens/new?scopes=repo&description=LeetGit"
+                target="_blank"
+                style="color: cadetblue"
+              >
+                Create Classic PAT &rarr;
+              </a>
+              &nbsp;|&nbsp;
+              <a
+                href="https://github.com/settings/personal-access-tokens/new"
+                target="_blank"
+                style="color: cadetblue"
+              >
+                Create Fine-grained PAT &rarr;
+              </a>
+            </p>
+          </div>
         </div>
 
         <!-- Repo Hook mode -->
@@ -35,7 +80,7 @@
           <p class="onboarding">
             <br />
             Set up repository hook to use
-            <strong>Leet<span style="color: #ff6c0a">Hub</span></strong>
+            <strong>Leet<span style="color: #ff6c0a">Git</span></strong>
           </p>
           <a id="hook_URL" href="" target="blank" class="ui secondary button">
             <i class="icon github"></i>
@@ -174,12 +219,44 @@
             </div>
           </div>
 
+          <!-- Toggle PAT Settings -->
+          <div>
+            <span id="collapsible-pat-icon" class="collapsible-icon">&#9654;</span> GitHub PAT
+            Settings
+            <div id="collapsible-pat-container" class="collapsible-container" style="display: none">
+              <div class="ui form" style="text-align: left">
+                <div class="field">
+                  <label for="update_pat_token" style="font-size: 0.85em">Update PAT:</label>
+                  <input
+                    type="password"
+                    id="update_pat_token"
+                    placeholder="Enter new PAT..."
+                    autocomplete="off"
+                  />
+                </div>
+              </div>
+              <div
+                id="pat-setting-btns"
+                style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap"
+              >
+                <button class="setting-btns" id="update-pat-btn">Update PAT</button>
+                <button class="setting-btns" id="unlink-pat-btn" style="color: #d9534f">
+                  Unlink Account
+                </button>
+              </div>
+              <span
+                id="pat-update-message"
+                style="display: none; font-size: 0.85em; margin-top: 4px"
+              ></span>
+            </div>
+          </div>
+
           <div class="ui small header">
             Want more features?
             <a
               style="color: cadetblue !important"
               target="_blank"
-              href="https://github.com/raphaelheinz/LeetHub-3.0/labels/feature"
+              href="https://github.com/prabhjot0109/LeetGit/labels/feature"
               >Request a feature!</a
             >
           </div>
@@ -188,17 +265,16 @@
 
       <!-- Generate Socials -->
       <div id="socials" class="sixteen wide column">
-        <a href="https://github.com/raphaelheinz/LeetHub-3.0" target="_blank">
+        <a href="https://github.com/prabhjot0109/LeetGit" target="_blank">
           <i class="ui black github icon"></i>
         </a>
-        <a href="mailto:raphael.heinz.hof.university@gmail.com" target="_blank">
-          <i class="ui red envelope icon"></i>
+        <a href="https://github.com/prabhjot0109/LeetGit/issues" target="_blank">
+          <i class="ui red bug icon"></i>
         </a>
         <a id="welcome_URL" href="" target="_blank"><i class="ui grey globe icon"></i></a>
       </div>
     </div>
 
-    <script src="../js/oauth2.js"></script>
     <script type="text/javascript" src="../js/popup.js"></script>
   </body>
 </html>
